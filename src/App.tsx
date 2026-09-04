@@ -30,74 +30,71 @@ export default function App() {
 
   // Auto-scroll engine: Waits 10 seconds per section and smooth scrolls to the next section
   useEffect(() => {
-    if (!hasEntered || !mainRef.current) return;
+    if (!hasEntered) return;
 
-    const mainEl = mainRef.current;
-    let sectionIndex = 0;
-    let autoScrollInterval: NodeJS.Timeout | null = null;
-    let userPauseTimeout: NodeJS.Timeout | null = null;
-    let isUserInteracting = false;
+    // Small delay to ensure main container is mounted and ready
+    const mountTimeout = setTimeout(() => {
+      const mainEl = mainRef.current;
+      if (!mainEl) return;
 
-    const startAutoScroll = () => {
-      if (autoScrollInterval) clearInterval(autoScrollInterval);
+      let isUserInteracting = false;
+      let userPauseTimeout: NodeJS.Timeout | null = null;
 
-      autoScrollInterval = setInterval(() => {
+      const performAutoScroll = () => {
         if (isUserInteracting) return;
 
         const sections = mainEl.querySelectorAll('section');
-        if (sections.length === 0) return;
+        if (!sections || sections.length === 0) return;
 
-        sectionIndex = (sectionIndex + 1) % sections.length;
-        sections[sectionIndex].scrollIntoView({ behavior: 'smooth' });
-      }, 10000); // 10 seconds per section
-    };
+        // Calculate current section index from scrollTop
+        const currentScroll = mainEl.scrollTop;
+        let activeIdx = 0;
+        let minDiff = Infinity;
 
-    // Keep active sectionIndex in sync with user scrolling
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const sections = Array.from(mainEl.querySelectorAll('section'));
-            const idx = sections.indexOf(entry.target as HTMLElement);
-            if (idx !== -1) {
-              sectionIndex = idx;
-            }
+        sections.forEach((sec, idx) => {
+          const diff = Math.abs((sec as HTMLElement).offsetTop - currentScroll);
+          if (diff < minDiff) {
+            minDiff = diff;
+            activeIdx = idx;
           }
         });
-      },
-      { root: mainEl, threshold: 0.5 }
-    );
 
-    const sections = mainEl.querySelectorAll('section');
-    sections.forEach((sec) => observer.observe(sec));
+        const nextIdx = (activeIdx + 1) % sections.length;
+        const targetSection = sections[nextIdx] as HTMLElement;
 
-    // Pause auto-scroll when user manually scrolls or touches the screen
-    const handleUserInteraction = () => {
-      isUserInteracting = true;
-      if (userPauseTimeout) clearTimeout(userPauseTimeout);
+        if (targetSection) {
+          mainEl.scrollTo({
+            top: targetSection.offsetTop,
+            behavior: 'smooth',
+          });
+        }
+      };
 
-      // Resume auto-scroll 10 seconds after user finishes manual interaction
-      userPauseTimeout = setTimeout(() => {
-        isUserInteracting = false;
-      }, 10000);
-    };
+      const intervalId = setInterval(performAutoScroll, 10000);
 
-    mainEl.addEventListener('touchstart', handleUserInteraction, { passive: true });
-    mainEl.addEventListener('wheel', handleUserInteraction, { passive: true });
-    mainEl.addEventListener('keydown', handleUserInteraction, { passive: true });
-    mainEl.addEventListener('mousedown', handleUserInteraction, { passive: true });
+      // Pause auto-scroll ONLY when user actively scrolls (wheel or touch drag)
+      const handleUserScroll = () => {
+        isUserInteracting = true;
+        if (userPauseTimeout) clearTimeout(userPauseTimeout);
 
-    startAutoScroll();
+        // Resume auto-scroll 10 seconds after user stops scrolling
+        userPauseTimeout = setTimeout(() => {
+          isUserInteracting = false;
+        }, 10000);
+      };
 
-    return () => {
-      if (autoScrollInterval) clearInterval(autoScrollInterval);
-      if (userPauseTimeout) clearTimeout(userPauseTimeout);
-      observer.disconnect();
-      mainEl.removeEventListener('touchstart', handleUserInteraction);
-      mainEl.removeEventListener('wheel', handleUserInteraction);
-      mainEl.removeEventListener('keydown', handleUserInteraction);
-      mainEl.removeEventListener('mousedown', handleUserInteraction);
-    };
+      mainEl.addEventListener('wheel', handleUserScroll, { passive: true });
+      mainEl.addEventListener('touchmove', handleUserScroll, { passive: true });
+
+      return () => {
+        clearInterval(intervalId);
+        if (userPauseTimeout) clearTimeout(userPauseTimeout);
+        mainEl.removeEventListener('wheel', handleUserScroll);
+        mainEl.removeEventListener('touchmove', handleUserScroll);
+      };
+    }, 500);
+
+    return () => clearTimeout(mountTimeout);
   }, [hasEntered]);
 
   const handleEnterInvitation = () => {
