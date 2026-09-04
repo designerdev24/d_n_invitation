@@ -10,11 +10,89 @@ import { ThankYou } from './components/ThankYou';
 import { FallingFlowers } from './components/FallingFlowers';
 import { AudioPlayer } from './components/AudioPlayer';
 
+// Auto-Scroll Engine Component: Mounts directly inside <main> and triggers smooth section scrolling every 10s
+function AutoScrollEngine() {
+  useEffect(() => {
+    const mainEl = document.querySelector('main');
+    if (!mainEl) return;
+
+    let isUserInteracting = false;
+    let userPauseTimeout: NodeJS.Timeout | null = null;
+
+    const performAutoScroll = () => {
+      if (isUserInteracting) return;
+
+      const sections = mainEl.querySelectorAll('section');
+      if (!sections || sections.length === 0) return;
+
+      // Find current section index based on scrollTop
+      const currentScroll = mainEl.scrollTop;
+      const viewportHeight = mainEl.clientHeight;
+      let activeIdx = 0;
+      let minDiff = Infinity;
+
+      sections.forEach((sec, idx) => {
+        const diff = Math.abs((sec as HTMLElement).offsetTop - currentScroll);
+        if (diff < minDiff) {
+          minDiff = diff;
+          activeIdx = idx;
+        }
+      });
+
+      const currentSection = sections[activeIdx] as HTMLElement;
+      const sectionBottom = currentSection.offsetTop + currentSection.offsetHeight;
+      const visibleBottom = currentScroll + viewportHeight;
+      const remainingUnseenSpace = sectionBottom - visibleBottom;
+
+      // If section is long (like Wedding Schedule) and has > 150px unseen content below viewport:
+      if (remainingUnseenSpace > 150) {
+        const scrollAmount = Math.min(viewportHeight * 0.8, remainingUnseenSpace);
+        mainEl.scrollTo({
+          top: currentScroll + scrollAmount,
+          behavior: 'smooth',
+        });
+      } else {
+        // Move to start of next section
+        const nextIdx = (activeIdx + 1) % sections.length;
+        const targetSection = sections[nextIdx] as HTMLElement;
+        if (targetSection) {
+          targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    };
+
+    // Auto-scroll every 10 seconds
+    const intervalId = setInterval(performAutoScroll, 10000);
+
+    // Pause auto-scroll when user actively scrolls (wheel or touch drag)
+    const handleUserScroll = () => {
+      isUserInteracting = true;
+      if (userPauseTimeout) clearTimeout(userPauseTimeout);
+
+      // Resume auto-scroll 10 seconds after user stops scrolling
+      userPauseTimeout = setTimeout(() => {
+        isUserInteracting = false;
+      }, 10000);
+    };
+
+    mainEl.addEventListener('wheel', handleUserScroll, { passive: true });
+    mainEl.addEventListener('touchmove', handleUserScroll, { passive: true });
+
+    return () => {
+      clearInterval(intervalId);
+      if (userPauseTimeout) clearTimeout(userPauseTimeout);
+      mainEl.removeEventListener('wheel', handleUserScroll);
+      mainEl.removeEventListener('touchmove', handleUserScroll);
+    };
+  }, []);
+
+  return null;
+}
+
 export default function App() {
   const [hasEntered, setHasEntered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const mainRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     // Create background audio instance
@@ -27,75 +105,6 @@ export default function App() {
       audioRef.current = null;
     };
   }, []);
-
-  // Auto-scroll engine: Waits 10 seconds per section and smooth scrolls to the next section
-  useEffect(() => {
-    if (!hasEntered) return;
-
-    // Small delay to ensure main container is mounted and ready
-    const mountTimeout = setTimeout(() => {
-      const mainEl = mainRef.current;
-      if (!mainEl) return;
-
-      let isUserInteracting = false;
-      let userPauseTimeout: NodeJS.Timeout | null = null;
-
-      const performAutoScroll = () => {
-        if (isUserInteracting) return;
-
-        const sections = mainEl.querySelectorAll('section');
-        if (!sections || sections.length === 0) return;
-
-        // Calculate current section index from scrollTop
-        const currentScroll = mainEl.scrollTop;
-        let activeIdx = 0;
-        let minDiff = Infinity;
-
-        sections.forEach((sec, idx) => {
-          const diff = Math.abs((sec as HTMLElement).offsetTop - currentScroll);
-          if (diff < minDiff) {
-            minDiff = diff;
-            activeIdx = idx;
-          }
-        });
-
-        const nextIdx = (activeIdx + 1) % sections.length;
-        const targetSection = sections[nextIdx] as HTMLElement;
-
-        if (targetSection) {
-          mainEl.scrollTo({
-            top: targetSection.offsetTop,
-            behavior: 'smooth',
-          });
-        }
-      };
-
-      const intervalId = setInterval(performAutoScroll, 10000);
-
-      // Pause auto-scroll ONLY when user actively scrolls (wheel or touch drag)
-      const handleUserScroll = () => {
-        isUserInteracting = true;
-        if (userPauseTimeout) clearTimeout(userPauseTimeout);
-
-        // Resume auto-scroll 10 seconds after user stops scrolling
-        userPauseTimeout = setTimeout(() => {
-          isUserInteracting = false;
-        }, 10000);
-      };
-
-      mainEl.addEventListener('wheel', handleUserScroll, { passive: true });
-      mainEl.addEventListener('touchmove', handleUserScroll, { passive: true });
-
-      return () => {
-        clearInterval(intervalId);
-        if (userPauseTimeout) clearTimeout(userPauseTimeout);
-        mainEl.removeEventListener('wheel', handleUserScroll);
-        mainEl.removeEventListener('touchmove', handleUserScroll);
-      };
-    }, 500);
-
-    return () => clearTimeout(mountTimeout);
-  }, [hasEntered]);
 
   const handleEnterInvitation = () => {
     setHasEntered(true);
@@ -134,7 +143,10 @@ export default function App() {
         {!hasEntered ? (
           <Splash key="splash" onEnter={handleEnterInvitation} />
         ) : (
-          <main ref={mainRef} key="main-content" className="w-full h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth relative">
+          <main key="main-content" className="w-full h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth relative">
+            {/* Auto-scroll Engine */}
+            <AutoScrollEngine />
+
             {/* Background Falling Rose Petals & Flowers Engine */}
             <FallingFlowers />
 
