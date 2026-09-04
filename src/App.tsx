@@ -14,6 +14,7 @@ export default function App() {
   const [hasEntered, setHasEntered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const mainRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     // Create background audio instance
@@ -26,6 +27,78 @@ export default function App() {
       audioRef.current = null;
     };
   }, []);
+
+  // Auto-scroll engine: Waits 10 seconds per section and smooth scrolls to the next section
+  useEffect(() => {
+    if (!hasEntered || !mainRef.current) return;
+
+    const mainEl = mainRef.current;
+    let sectionIndex = 0;
+    let autoScrollInterval: NodeJS.Timeout | null = null;
+    let userPauseTimeout: NodeJS.Timeout | null = null;
+    let isUserInteracting = false;
+
+    const startAutoScroll = () => {
+      if (autoScrollInterval) clearInterval(autoScrollInterval);
+
+      autoScrollInterval = setInterval(() => {
+        if (isUserInteracting) return;
+
+        const sections = mainEl.querySelectorAll('section');
+        if (sections.length === 0) return;
+
+        sectionIndex = (sectionIndex + 1) % sections.length;
+        sections[sectionIndex].scrollIntoView({ behavior: 'smooth' });
+      }, 10000); // 10 seconds per section
+    };
+
+    // Keep active sectionIndex in sync with user scrolling
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const sections = Array.from(mainEl.querySelectorAll('section'));
+            const idx = sections.indexOf(entry.target as HTMLElement);
+            if (idx !== -1) {
+              sectionIndex = idx;
+            }
+          }
+        });
+      },
+      { root: mainEl, threshold: 0.5 }
+    );
+
+    const sections = mainEl.querySelectorAll('section');
+    sections.forEach((sec) => observer.observe(sec));
+
+    // Pause auto-scroll when user manually scrolls or touches the screen
+    const handleUserInteraction = () => {
+      isUserInteracting = true;
+      if (userPauseTimeout) clearTimeout(userPauseTimeout);
+
+      // Resume auto-scroll 10 seconds after user finishes manual interaction
+      userPauseTimeout = setTimeout(() => {
+        isUserInteracting = false;
+      }, 10000);
+    };
+
+    mainEl.addEventListener('touchstart', handleUserInteraction, { passive: true });
+    mainEl.addEventListener('wheel', handleUserInteraction, { passive: true });
+    mainEl.addEventListener('keydown', handleUserInteraction, { passive: true });
+    mainEl.addEventListener('mousedown', handleUserInteraction, { passive: true });
+
+    startAutoScroll();
+
+    return () => {
+      if (autoScrollInterval) clearInterval(autoScrollInterval);
+      if (userPauseTimeout) clearTimeout(userPauseTimeout);
+      observer.disconnect();
+      mainEl.removeEventListener('touchstart', handleUserInteraction);
+      mainEl.removeEventListener('wheel', handleUserInteraction);
+      mainEl.removeEventListener('keydown', handleUserInteraction);
+      mainEl.removeEventListener('mousedown', handleUserInteraction);
+    };
+  }, [hasEntered]);
 
   const handleEnterInvitation = () => {
     setHasEntered(true);
@@ -64,7 +137,7 @@ export default function App() {
         {!hasEntered ? (
           <Splash key="splash" onEnter={handleEnterInvitation} />
         ) : (
-          <main key="main-content" className="w-full h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth relative">
+          <main ref={mainRef} key="main-content" className="w-full h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth relative">
             {/* Background Falling Rose Petals & Flowers Engine */}
             <FallingFlowers />
 
