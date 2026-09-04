@@ -47,71 +47,80 @@ export const Timeline: React.FC = () => {
         {/* Glassmorphic Event Cards Container */}
         <div className="w-full flex flex-col space-y-8 items-center">
           
-          {/* CARD 1: Holy Matrimony (Muhurtham) - 60% Opacity */}
+          {/* CARD 1: Holy Matrimony (Muhurtham) - 60% Opacity with blended bg_blend background */}
           <motion.div
             initial={{ opacity: 0, y: 25 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="w-full bg-white/60 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-[0_15px_35px_rgba(40,40,40,0.06)] border border-white/60 flex flex-col items-center text-center"
+            className="w-full bg-white/60 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-[0_15px_35px_rgba(40,40,40,0.06)] border border-white/60 flex flex-col items-center text-center relative overflow-hidden"
           >
-            {/* Top Illustration: muhurtham.png */}
+            {/* Blended Background Image: bg_blend.png */}
             <img
-              src="/assets/muhurtham.png"
-              alt="Muhurtham Illustration"
-              className="w-36 sm:w-44 h-auto object-contain mx-auto mb-3"
+              src="/assets/bg_blend.png"
+              alt="Background Pattern Blend"
+              className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-multiply pointer-events-none rounded-3xl"
             />
 
-            {/* Decorative Icon Ring */}
-            <span className="text-xl mb-1">💍</span>
+            <div className="relative z-10 w-full flex flex-col items-center text-center">
+              {/* Top Illustration: muhurtham.png */}
+              <img
+                src="/assets/muhurtham.png"
+                alt="Muhurtham Illustration"
+                className="w-36 sm:w-44 h-auto object-contain mx-auto mb-3"
+              />
 
-            {/* Title */}
-            <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-[#386752]">
-              Muhurtham · Holy Matrimony
-            </h3>
+              {/* Decorative Icon Ring */}
+              <span className="text-xl mb-1">💍</span>
 
-            {/* Description Subtitle */}
-            <p className="font-poppins text-xs sm:text-sm text-[#2D3A34]/80 max-w-md my-2.5 font-normal leading-relaxed">
-              The moment two families become one under divine blessings. Officiated by Pastor Eripilli John Garu.
-            </p>
+              {/* Title */}
+              <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-[#386752]">
+                Muhurtham · Holy Matrimony
+              </h3>
 
-            {/* Pill Badges at Bottom */}
-            <div className="flex flex-col items-center gap-2 mt-2 w-full">
-              {/* Row 1: Date & Time Badges */}
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#386752]/25 shadow-xs">
-                  <Calendar className="w-3.5 h-3.5 text-[#BB2965]" />
-                  <span className="font-poppins text-xs font-medium text-[#386752]">
-                    4th September 2026
+              {/* Description Subtitle */}
+              <p className="font-poppins text-xs sm:text-sm text-[#2D3A34]/80 max-w-md my-2.5 font-normal leading-relaxed">
+                The moment two families become one under divine blessings. Officiated by Pastor Eripilli John Garu.
+              </p>
+
+              {/* Pill Badges at Bottom */}
+              <div className="flex flex-col items-center gap-2 mt-2 w-full">
+                {/* Row 1: Date & Time Badges */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#386752]/25 shadow-xs">
+                    <Calendar className="w-3.5 h-3.5 text-[#BB2965]" />
+                    <span className="font-poppins text-xs font-medium text-[#386752]">
+                      4th September 2026
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#386752]/25 shadow-xs">
+                    <Clock className="w-3.5 h-3.5 text-[#BB2965]" />
+                    <span className="font-poppins text-xs font-medium text-[#386752]">
+                      10:00 AM IST
+                    </span>
+                  </div>
+                </div>
+
+                {/* Row 2: Location Badge */}
+                <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/80 border border-[#386752]/25 shadow-xs max-w-full">
+                  <MapPin className="w-3.5 h-3.5 text-[#BB2965] shrink-0" />
+                  <span className="font-poppins text-xs font-medium text-[#BB2965] truncate">
+                    Uppada Nayakar Colony - 2, At Residence
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#386752]/25 shadow-xs">
-                  <Clock className="w-3.5 h-3.5 text-[#BB2965]" />
-                  <span className="font-poppins text-xs font-medium text-[#386752]">
-                    10:00 AM IST
-                  </span>
-                </div>
+                {/* Direction Google Maps Button */}
+                <a
+                  href="https://maps.app.goo.gl/THD7yDuZhRZvKgrPA?g_st=aw"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 mt-3 px-5 py-2 rounded-full bg-white/90 text-[#386752] border-[0.5px] border-[#386752] font-poppins font-medium text-xs tracking-wider uppercase shadow-[0_10px_30px_rgba(40,40,40,0.10)] hover:bg-[#386752] hover:text-white transition-all duration-300 transform active:scale-95 cursor-pointer"
+                >
+                  <Navigation className="w-3.5 h-3.5" />
+                  <span>Direction</span>
+                </a>
               </div>
-
-              {/* Row 2: Location Badge */}
-              <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/80 border border-[#386752]/25 shadow-xs max-w-full">
-                <MapPin className="w-3.5 h-3.5 text-[#BB2965] shrink-0" />
-                <span className="font-poppins text-xs font-medium text-[#BB2965] truncate">
-                  Uppada Nayakar Colony - 2, At Residence
-                </span>
-              </div>
-
-              {/* Direction Google Maps Button */}
-              <a
-                href="https://maps.app.goo.gl/THD7yDuZhRZvKgrPA?g_st=aw"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 mt-3 px-5 py-2 rounded-full bg-white/90 text-[#386752] border-[0.5px] border-[#386752] font-poppins font-medium text-xs tracking-wider uppercase shadow-[0_10px_30px_rgba(40,40,40,0.10)] hover:bg-[#386752] hover:text-white transition-all duration-300 transform active:scale-95 cursor-pointer"
-              >
-                <Navigation className="w-3.5 h-3.5" />
-                <span>Direction</span>
-              </a>
             </div>
           </motion.div>
 
